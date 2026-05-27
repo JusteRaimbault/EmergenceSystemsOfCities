@@ -1,7 +1,6 @@
-package org.openmole.spatialdata.model.urbandynamics
+package urbanmodels.mesomacromultiscale
 
-import org.openmole.spatialdata.grid.synthetic.{ExpMixtureGridGenerator, ReactionDiffusionGridGenerator}
-import org.openmole.spatialdata.grid.Implicits._
+import urbanmodels.utils.ExpMixtureGridGenerator
 
 import scala.util.Random
 
@@ -30,7 +29,7 @@ object ReactionDiffusionMesoState {
                             alpha: Double,beta: Double,ndiff: Int,growthRate: Double,
                             mesoTimeSteps: Int)(implicit rng: Random): ReactionDiffusionMesoState = ReactionDiffusionMesoState(
     0,
-    ExpMixtureGridGenerator(gridSize,1,centerDensity,Seq(kernelRadius),Seq((gridSize/2,gridSize/2))).generateGrid.map{_.toVector}.toVector,
+    ExpMixtureGridGenerator((gridSize,gridSize),1,centerDensity,Seq(kernelRadius),Seq((gridSize/2,gridSize/2))).generateGrid.map{_.toVector}.toVector,
     alpha,beta,ndiff,growthRate,mesoTimeSteps,0.0
   )
 

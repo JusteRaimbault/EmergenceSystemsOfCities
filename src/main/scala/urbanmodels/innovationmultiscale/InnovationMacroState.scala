@@ -1,6 +1,8 @@
-package innovationmultiscale
+package urbanmodels.innovationmultiscale
 
-case class MacroState(
+import urbanmodels.utils.Matrix
+
+case class InnovationMacroState(
                      time: Int,
                      populations: Matrix,
                      innovations: Seq[Matrix],
@@ -10,6 +12,6 @@ case class MacroState(
                      )
 
 
-object MacroState {
+object InnovationMacroState {
 
 }

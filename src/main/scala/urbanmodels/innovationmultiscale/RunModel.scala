@@ -1,6 +1,8 @@
-package innovationmultiscale
+package urbanmodels.innovationmultiscale
 
 import scala.util.Random
+
+import urbanmodels.utils.Statistics
 
 object RunModel extends App {
 

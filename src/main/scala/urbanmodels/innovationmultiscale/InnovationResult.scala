@@ -1,9 +1,12 @@
-package innovationmultiscale
+package urbanmodels.innovationmultiscale
 
-import innovationmultiscale.Result.MesoResult
+import urbanmodels.innovationmultiscale.InnovationResult.MesoResult
+import urbanmodels.utils.Matrix
+import urbanmodels.utils.DenseMatrix
+import urbanmodels.utils.Statistics
 
-case class Result(
-                 states: Seq[State]
+case class InnovationResult(
+                 states: Seq[InnovationState]
                  ){
 
   def populations: Matrix = {
@@ -69,11 +72,11 @@ case class Result(
 }
 
 
-object Result {
+object InnovationResult {
 
 
 
-  case class MesoResult(states: Seq[MesoState]){
+  case class MesoResult(states: Seq[InnovationMesoState]){
 
     def fitnesses: Array[Array[Double]] = states.map(_.firms.map(_.currentFitness).toArray).toArray
 
@@ -92,7 +95,7 @@ object Result {
   }
 
   object MesoResult {
-    def productDiversity(state: MesoState): Double = {
+    def productDiversity(state: InnovationMesoState): Double = {
       val products = state.firms.map(_.currentProduct)
       val proximities = products.flatMap{pi =>
         val ni = Statistics.norm(pi)
@@ -104,7 +107,7 @@ object Result {
       proximities.sum/proximities.size.toDouble
     }
 
-    def fitnessEntropy(state: MesoState): Double = {
+    def fitnessEntropy(state: InnovationMesoState): Double = {
       val fitnesses: Seq[Double] = state.firms.map(_.currentFitness)
       val (mi, ma) = (fitnesses.min, fitnesses.max)
       //val normfitnesses = fitnesses.map(f => (f - mi)/(ma - mi))

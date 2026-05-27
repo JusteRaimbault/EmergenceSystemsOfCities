@@ -1,4 +1,4 @@
-package innovationmultiscale
+package urbanmodels.utils
 
 import scala.util.Random
 

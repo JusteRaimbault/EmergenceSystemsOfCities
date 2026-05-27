@@ -1,4 +1,4 @@
-package innovationmultiscale
+package urbanmodels.utils
 
 import infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1
 
@@ -46,6 +46,35 @@ object Statistics {
     simpleRegression.addData(distributionLog)
     (simpleRegression.getSlope, simpleRegression.getRSquare)
   }
+
+
+  def entropy(matrix: Array[Array[Double]]): Double = entropy(matrix.flatten)
+
+  def entropy(matrix: Seq[Seq[Double]]): Double = entropy(matrix.flatten.toArray)
+
+
+  /**
+   * Entropy of a stat distrib
+   *
+   * @param values values
+   * @return
+   */
+  def entropy(values: Array[Double]): Double = {
+    val x = values.map { d => if (d.isNaN) 0.0 else d }
+    val totalQuantity = x.sum
+    //assert(totalQuantity > 0)
+
+    totalQuantity match {
+      case 0.0 => 0.0
+      case _ =>
+        x.map { p =>
+          val quantityRatio = p / totalQuantity
+          val localEntropy = if (quantityRatio == 0.0) 0.0 else quantityRatio * math.log(quantityRatio)
+          localEntropy
+        }.sum * (-1 / math.log(x.length))
+    }
+  }
+
 
   /**
    * ex https://github.com/jlizier/jidt/wiki/SimpleJavaExamples#example-6---late-binding-mutual-info-calculator

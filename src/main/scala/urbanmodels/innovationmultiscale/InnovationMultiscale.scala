@@ -1,4 +1,4 @@
-package innovationmultiscale
+package urbanmodels.innovationmultiscale
 
 import scala.util.Random
 
@@ -34,14 +34,14 @@ case class InnovationMultiscale(
                                macroToMesoMutationMaxUpdate: Double,
                                macroToMesoExchangeMaxUpdate: Double
                                ) {
-  def run: Result = InnovationMultiscale.run(this)
+  def run: InnovationResult = InnovationMultiscale.run(this)
 }
 
 
 
 object InnovationMultiscale {
 
-  def setup(model: InnovationMultiscale): State = {
+  def setup(model: InnovationMultiscale): InnovationState = {
     implicit val rng: Random = new Random(model.seed)
 
     import model._
@@ -62,15 +62,15 @@ object InnovationMultiscale {
     //println(mesoSizes)
     val initialMesoStates = mesoSizes.zip(mesoModels).map{case (s, m) => Seq(MesoInnovationCluster.setup(s, m.fitness))}
 
-    State(0, initialMacroState, initialMesoStates, rng, macroModel, mesoModels)
+    InnovationState(0, initialMacroState, initialMesoStates, rng, macroModel, mesoModels)
   }
 
-  def multiscaleStep(model: InnovationMultiscale, state: State): State = {
+  def multiscaleStep(model: InnovationMultiscale, state: InnovationState): InnovationState = {
     implicit val rng: Random = state.rng
 
     //println(state.mesoStates.map(_.last.firms.map(_.employees.size)))// at setup one firm is lost: ?
     // meso
-    val mesoAfterCycle: (Seq[Seq[MesoState]], Seq[MesoInnovationCluster]) = state.mesoStates.zip(state.mesoModels).map{
+    val mesoAfterCycle: (Seq[Seq[InnovationMesoState]], Seq[MesoInnovationCluster]) = state.mesoStates.zip(state.mesoModels).map{
       case (previousCycleStates,m) =>
         MesoInnovationCluster.mesoCycle(m,previousCycleStates)
     }.unzip
@@ -83,7 +83,7 @@ object InnovationMultiscale {
     val newMacroState = MacroUrbanEvolution.macroStep(state.macroModel, state.macroState, mesoToMacroInnovativeCities)
 
     // macro -> meso
-    val macroToMesoUpdateMeso: Seq[(MesoInnovationCluster, Seq[MesoState])] =
+    val macroToMesoUpdateMeso: Seq[(MesoInnovationCluster, Seq[InnovationMesoState])] =
       ScaleCoupling.macroToMesoUpdateMeso(mesoAfterCycle._1, mesoAfterCycle._2, newMacroState,
         model.macroToMesoCrossoverMaxUpdate, model.macroToMesoMutationMaxUpdate, model.macroToMesoExchangeMaxUpdate)
 
@@ -95,11 +95,11 @@ object InnovationMultiscale {
     )
   }
 
-  def run(model: InnovationMultiscale): Result = {
-    val initialState: State = setup(model)
-    def f(s: State): State = multiscaleStep(model, s)
+  def run(model: InnovationMultiscale): InnovationResult = {
+    val initialState: InnovationState = setup(model)
+    def f(s: InnovationState): InnovationState = multiscaleStep(model, s)
     val states = Iterator.iterate(initialState)(f).takeWhile(_.time <= model.finalTime - 1).toSeq
-    Result(states)
+    InnovationResult(states)
   }
 
 }

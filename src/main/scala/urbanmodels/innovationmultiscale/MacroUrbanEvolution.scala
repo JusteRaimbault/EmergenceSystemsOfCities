@@ -1,9 +1,16 @@
-package innovationmultiscale
+package urbanmodels.innovationmultiscale
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-import innovationmultiscale.Matrix.MatrixImplementation
+import urbanmodels.utils.Matrix
+import urbanmodels.utils.Matrix.MatrixImplementation
+import urbanmodels.utils.DenseMatrix
+import urbanmodels.utils.RealMatrix
+import urbanmodels.utils.Spatstat
+import urbanmodels.utils.Statistics
+import urbanmodels.utils.RandomPointsGenerator
+import urbanmodels.utils.Stochastic
 
 /**
  * Modifications from the original model:
@@ -28,7 +35,7 @@ case class MacroUrbanEvolution(
 
 object MacroUrbanEvolution {
 
-  def setup(model: MacroUrbanEvolution)(implicit rng: Random): MacroState = {
+  def setup(model: MacroUrbanEvolution)(implicit rng: Random): InnovationMacroState = {
     implicit val m: MatrixImplementation = Matrix.defaultImplementation
     import model._
     val dmat = Matrix(Spatstat.euclidianDistanceMatrix(RandomPointsGenerator(syntheticCities).generatePoints.toArray))
@@ -46,7 +53,7 @@ object MacroUrbanEvolution {
     val gravityDistanceWeights = dmat.map { d => Math.exp(-d / gravityDecay) }
     val potsgravity = gravityPotentials(innovationProportions.toSeq, Array(1.0), populationMatrix.getCol(0).flatValues, gravityDistanceWeights, 0)
 
-    MacroState(0, populationMatrix, innovationProportions.toSeq, innovationUtilities.toSeq, dmat, potsgravity)
+    InnovationMacroState(0, populationMatrix, innovationProportions.toSeq, innovationUtilities.toSeq, dmat, potsgravity)
   }
 
 
@@ -80,7 +87,7 @@ object MacroUrbanEvolution {
     }
   }
 
-  def macroStep(model: MacroUrbanEvolution, state: MacroState, innovativeCities: Seq[Int])(implicit rng: Random): MacroState = {
+  def macroStep(model: MacroUrbanEvolution, state: InnovationMacroState, innovativeCities: Seq[Int])(implicit rng: Random): InnovationMacroState = {
 
     import model._
     val gravityDistanceWeights = state.distanceMatrix.map { d => Math.exp(-d / gravityDecay) }

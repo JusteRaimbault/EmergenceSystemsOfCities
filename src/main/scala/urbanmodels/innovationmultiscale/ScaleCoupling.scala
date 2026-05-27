@@ -1,4 +1,4 @@
-package innovationmultiscale
+package urbanmodels.innovationmultiscale
 
 import org.apache.commons.math3.random.RandomDataGenerator
 
@@ -12,7 +12,7 @@ object ScaleCoupling {
    * @param initialMacroState
    * @return
    */
-  def initialFirmSizes(initialMacroState: MacroState, firmSizeScaling : Double, largestFirmSize: Double,
+  def initialFirmSizes(initialMacroState: InnovationMacroState, firmSizeScaling : Double, largestFirmSize: Double,
                        firmsNumberScaling: Double, largestClusterSize: Double, largestFirmSizeScaling: Double
                       )(implicit rng: Random): Seq[Seq[Int]] = {
     // number of firms for each area
@@ -39,7 +39,7 @@ object ScaleCoupling {
   /**
    * meso -> macro
    */
-  def innovativeCities(cycleStates: Seq[Seq[MesoState]], mesoToMacroInnovationThreshold: Double): Seq[Int] = {
+  def innovativeCities(cycleStates: Seq[Seq[InnovationMesoState]], mesoToMacroInnovationThreshold: Double): Seq[Int] = {
     val citiesRelativePerf = cycleStates.map{cityCycle =>
       val bestFitness = cityCycle.last.firms.map(_.currentFitness).max
       val avgFitness = cityCycle.last.firms.map(_.currentFitness).sum / cityCycle.last.firms.size.toDouble
@@ -56,14 +56,14 @@ object ScaleCoupling {
    *   with genome/utilities? ~ hypothesis more difficult to interpret
    */
   def macroToMesoUpdateMeso(
-                             mesoAfterCycle: Seq[Seq[MesoState]],
+                             mesoAfterCycle: Seq[Seq[InnovationMesoState]],
                              mesoModels: Seq[MesoInnovationCluster],
                              //previousMacroState: MacroState,// not needed - all pop in Matrix
-                             macroState: MacroState,
+                             macroState: InnovationMacroState,
                              macroToMesoCrossoverMaxUpdate: Double,
                              macroToMesoMutationMaxUpdate: Double,
                              macroToMesoExchangeMaxUpdate: Double
-                           ): Seq[(MesoInnovationCluster, Seq[MesoState])] = {
+                           ): Seq[(MesoInnovationCluster, Seq[InnovationMesoState])] = {
     val deltaPops = (macroState.populations.getCol(macroState.time)- macroState.populations.getCol(macroState.time-1)).flatValues
     val deltaPopMax = deltaPops.max
     val relDeltaPop = deltaPops.map(_ / deltaPopMax)

@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.model.urbandynamics
+package urbanmodels.mesomacromultiscale
 
 
 case class MultiscaleState(

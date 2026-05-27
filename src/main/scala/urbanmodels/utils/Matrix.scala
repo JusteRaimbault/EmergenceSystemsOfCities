@@ -1,4 +1,4 @@
-package innovationmultiscale
+package urbanmodels.utils
 
 import org.apache.commons.math3.linear
 import org.apache.commons.math3.linear.{LUDecomposition, MatrixUtils}

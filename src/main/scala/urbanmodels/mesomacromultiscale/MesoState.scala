@@ -1,7 +1,7 @@
-package org.openmole.spatialdata.model.urbandynamics
+package urbanmodels.mesomacromultiscale
 
-import org.openmole.spatialdata.grid.measures.GridMorphology
-import org.openmole.spatialdata.utils.math.Statistics
+import urbanmodels.utils.GridMorphology
+import urbanmodels.utils.Statistics
 
 trait MesoState {
   def time: Int
@@ -9,7 +9,7 @@ trait MesoState {
 
   def morphology: (Double,Double,Double,Double,Double) = {
     val pop = populationGrid.map{_.toArray}.toArray
-    val s = Statistics.slope(pop)
+    val s = Statistics.slope(pop.flatten)
     (GridMorphology.moran(pop),GridMorphology.distanceMean(pop),Statistics.entropy(pop),s._1,s._2)
   }
 

@@ -1,9 +1,8 @@
-package org.openmole.spatialdata.model.urbandynamics
+package urbanmodels.mesomacromultiscale
 
-import org.openmole.spatialdata.grid.measures.GridMorphology
-import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.Matrix
-import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
+import urbanmodels.utils.GridMorphology
+import urbanmodels.utils.Matrix
+import urbanmodels.utils.Matrix.MatrixImplementation
 
 import scala.annotation.tailrec
 import scala.util.Random

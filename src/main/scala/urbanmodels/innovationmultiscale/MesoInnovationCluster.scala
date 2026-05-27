@@ -1,4 +1,4 @@
-package innovationmultiscale
+package urbanmodels.innovationmultiscale
 
 import scala.jdk.CollectionConverters.IterableHasAsJava
 import scala.util.Random
@@ -167,7 +167,7 @@ object MesoInnovationCluster {
    * @param rng
    * @return
    */
-  def setup(sizes: Seq[Int], fitness: Fitness)(implicit rng: Random): MesoState = {
+  def setup(sizes: Seq[Int], fitness: Fitness)(implicit rng: Random): InnovationMesoState = {
     val firmsNumber = sizes.size
     val employees: Seq[Employee] = (1 to sizes.sum).map{i =>Employee(i, fitness.genome(rng))}
     val res = Iterator.iterate((Seq.empty[Firm], employees, 0)){
@@ -177,11 +177,11 @@ object MesoInnovationCluster {
     }.takeWhile(_._1.size<firmsNumber).toSeq.last
     val (lastFirm, _) = Firm.randomFirm(sizes.last, res._2, fitness)
     val firms = res._1++Seq(lastFirm)
-    MesoState(firms, 0.0, 0)
+    InnovationMesoState(firms, 0.0, 0)
   }
 
 
-  def setupCycle(states: Seq[MesoState], model: MesoInnovationCluster)(implicit rng: Random): (MesoState, MesoInnovationCluster) = {
+  def setupCycle(states: Seq[InnovationMesoState], model: MesoInnovationCluster)(implicit rng: Random): (InnovationMesoState, MesoInnovationCluster) = {
     val newmodel = model.copy(fitness = MesoInnovationCluster.randomGeneralizedRastrigin(model.genomeSize))
     val sizes = states.last.firms.map(_.employees.size)
     //println(sizes)
@@ -190,7 +190,7 @@ object MesoInnovationCluster {
   }
 
 
-  def mesoStep(state: MesoState, model: MesoInnovationCluster)(implicit rng: Random): MesoState = {
+  def mesoStep(state: InnovationMesoState, model: MesoInnovationCluster)(implicit rng: Random): InnovationMesoState = {
     import model._
 
     // innovate within firms
@@ -211,9 +211,9 @@ object MesoInnovationCluster {
    * @param rng
    * @return
    */
-  def mesoCycle(model: MesoInnovationCluster, previousCycleStates: Seq[MesoState])(implicit rng: Random): (Seq[MesoState], MesoInnovationCluster) = {
+  def mesoCycle(model: MesoInnovationCluster, previousCycleStates: Seq[InnovationMesoState])(implicit rng: Random): (Seq[InnovationMesoState], MesoInnovationCluster) = {
     val (initialState, newmodel) = setupCycle(previousCycleStates, model)
-    def f(s: MesoState): MesoState = mesoStep(s, newmodel)
+    def f(s: InnovationMesoState): InnovationMesoState = mesoStep(s, newmodel)
     (Iterator.iterate(initialState)(f).takeWhile(_.time <= newmodel.timeSteps).toSeq, newmodel)
   }
 

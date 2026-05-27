@@ -1,6 +1,6 @@
-package org.openmole.spatialdata.model.urbandynamics
+package urbanmodels.mesomacromultiscale
 
-import org.openmole.spatialdata.utils.math.Matrix
+import urbanmodels.utils.Matrix
 
 
 

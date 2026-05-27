@@ -3,10 +3,10 @@ package org.openmole.spatialdata.application.multiscalemicro
 import org.openmole.spatialdata.network.synthetic.GridNetworkGenerator
 import org.openmole.spatialdata.network.{Link, Network, Node}
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.Convolution
+import urbanmodels.utils.Convolution
 import org.openmole.spatialdata.utils.visualization
 import org.openmole.spatialdata.vector.{Attributes, Polygons}
-import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
+import urbanmodels.utils.RandomPointsGenerator
 import org.locationtech.jts.geom
 
 import scala.collection.mutable
