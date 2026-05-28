@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.application
+package urbanmodels
 
 
 /**
@@ -8,4 +8,4 @@ package org.openmole.spatialdata.application
   *
   *
   */
-package object multiscalemicro
+package object micromesomultiscale

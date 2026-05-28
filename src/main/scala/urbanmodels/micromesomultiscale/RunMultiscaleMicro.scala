@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.application.multiscalemicro
+package urbanmodels.micromesomultiscale
 
 object RunMultiscaleMicro extends App {
 

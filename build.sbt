@@ -18,5 +18,6 @@ OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8
 //resolvers += "Sonatype OSS Staging" at "https://oss.sonatype.org/content/repositories/staging"
 
 libraryDependencies ++= Seq(
-  "org.apache.commons" % "commons-math3" % "3.6.1"
+  "org.apache.commons" % "commons-math3" % "3.6.1",
+  "org.jgrapht" % "jgrapht-core" % "1.5.1"
 )

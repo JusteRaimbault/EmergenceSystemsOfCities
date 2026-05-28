@@ -37,7 +37,6 @@ object ExpMixtureGridGenerator {
 
   /**
     * Generate one exponential kernel mixture grid
-    * -- DEPRECATED, function below is more general --
     *
     * @param gridSize grid size
     * @param nCenters centers
@@ -46,7 +45,7 @@ object ExpMixtureGridGenerator {
     * @param rng random
     * @return
     */
-  def expMixtureGrid1D(gridSize: Int, nCenters: Int, maxValue: Double, kernelRadius: Double, rng: scala.util.Random): RasterLayerData[Double] = {
+  def expMixtureGrid1D(gridSize: Int, nCenters: Int, maxValue: Double, kernelRadius: Double, rng: scala.util.Random): Array[Array[Double]] = {
     val arrayVals = Array.fill[Double](gridSize, gridSize) {
       0.0
     }
@@ -61,81 +60,6 @@ object ExpMixtureGridGenerator {
     arrayVals
   }
 
-  /**
-    * A multilayer exponential mixture with same centers
-    *
-    * @param gridSize grid size
-    * @param nCenters centers
-    * @param maxValues max value
-    * @param kernelRadius kernel radius
-    * @param rng random
-    * @return
-    */
-  def expMixtureGridSameCenters(
-                                 gridSize:     Either[Int, (Int, Int)],
-                                 nCenters:     Int,
-                                 maxValues:    Either[Double, Seq[Double]],
-                                 kernelRadius: Either[Double, Seq[Double]],
-                                 rng:          scala.util.Random
-                               ): (Array[Array[Double]], Seq[(Double,Double)]) = {
-    // grid dimensions
-    val dims: (Int, Int) = gridSize match {
-      case Left(s)  => (s, s)
-      case Right(d) => d
-    }
-
-    // ensure parameters consistency
-    val maxVals = maxValues match {
-      case Left(d)   => Seq(d)
-      case Right(dd) => dd
-    }
-    val radiuses = kernelRadius match {
-      case Left(d)   => Seq(d)
-      case Right(dd) => dd
-    }
-
-    //if (maxVals.size != radiuses.size) throw new UserBadDataError("Wrong input parameters")
-
-    val layerdim = maxVals.size
-
-    // generate centers
-    val centers = Seq.fill[(Double,Double)](nCenters) {
-      (rng.nextInt(dims._1).toDouble, rng.nextInt(dims._2).toDouble)
-    }
-
-    // fill the empty raster
-    val raster = Seq.fill[Array[Array[Double]]](layerdim) {
-      Array.fill(dims._1, dims._2)(0.0)
-    }
-
-    for (k <- 0 until layerdim; i <- 0 until dims._1; j <- 0 until dims._2; c <- 0 until nCenters) {
-      raster(k)(i)(j) = raster(k)(i)(j) + maxVals(k) * math.exp(-math.sqrt(math.pow(i - centers(c)._1, 2) + math.pow(j - centers(c)._2, 2)) / radiuses(k))
-    }
-    (raster, centers)
-  }
-
-  /**
-    * Generate a sample of exponent kernel mixture grids
-    *
-    * @param samples number of samples
-    * @param gridSize grid size
-    * @param nCenters centers
-    * @param maxValue max value
-    * @param kernelRadius kernel radius
-    * @param rng rng
-    */
-  def expMixtureGridSameCentersSample(
-                                       samples:      Int,
-                                       gridSize:     Either[Int, (Int, Int)],
-                                       nCenters:     Int                         = 1,
-                                       maxValue:     Either[Double, Seq[Double]] = Left(1.0),
-                                       kernelRadius: Either[Double, Seq[Double]] = Left(1.0),
-                                       rng:          scala.util.Random
-                                     ): Seq[Seq[Array[Array[Double]]]] = {
-    Seq.fill(samples) {
-      expMixtureGridSameCenters(gridSize, nCenters, maxValue, kernelRadius, rng)._1
-    }
-  }
 
 }
 

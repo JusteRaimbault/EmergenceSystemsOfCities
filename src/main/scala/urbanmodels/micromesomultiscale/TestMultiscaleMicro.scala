@@ -1,8 +1,7 @@
-package org.openmole.spatialdata.application.multiscalemicro
+package urbanmodels.micromesomultiscale
 
 import scala.util.Random
 
-// runMain org.openmole.spatialdata.application.multiscalemicro.TestMultiscaleMicro
 object TestMultiscaleMicro extends App {
 
   MultiscaleMicro.visualize(
