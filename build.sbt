@@ -19,5 +19,8 @@ OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
-  "org.jgrapht" % "jgrapht-core" % "1.5.1"
+  "org.apache.commons" % "commons-rng-sampling" % "1.4",
+  "org.apache.commons" % "commons-rng-simple" % "1.4",
+  "org.jgrapht" % "jgrapht-core" % "1.5.1",
+  "org.locationtech.jts" % "jts-core" % "1.19.0"
 )

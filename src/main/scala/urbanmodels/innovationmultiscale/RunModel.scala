@@ -10,7 +10,7 @@ object RunModel extends App {
 
   val model = InnovationMultiscale(
     seed = rng.nextLong(),
-    finalTime = 50,
+    finalTime = 30,
     setupSyntheticCities = 10,
     setupSyntheticHierarchy = 1.0,
     setupSyntheticMaxPop = 10000.0,

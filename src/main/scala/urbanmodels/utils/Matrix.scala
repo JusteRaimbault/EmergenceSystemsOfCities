@@ -178,6 +178,18 @@ object Matrix {
   def msum: (Matrix,Matrix)=>Matrix = {case m: (Matrix,Matrix) => m._1+m._2}
 
 
+  def randomDistanceMatrix(n: Int,worldSize: Double)(implicit rng: Random): Matrix= {
+    val xcoords = Vector.fill(n)(rng.nextDouble()*worldSize)
+    val ycoords = Vector.fill(n)(rng.nextDouble()*worldSize)
+
+    val flatres = for {
+      x1 <- xcoords.zip(ycoords)
+      x2 <- xcoords.zip(ycoords)
+    } yield math.sqrt(math.pow(x1._1-x2._1,2)+math.pow(x1._2-x2._2,2))
+
+    Matrix(flatres.toArray.sliding(n,n).toArray)(Matrix.defaultImplementation)
+  }
+
 }
 
 

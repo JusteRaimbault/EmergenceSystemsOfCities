@@ -2,6 +2,7 @@ package urbanmodels.mesomacromultiscale
 
 import urbanmodels.utils.ExpMixtureGridGenerator
 
+import scala.Tuple2
 import scala.util.Random
 
 case class ReactionDiffusionMesoState(
@@ -48,7 +49,7 @@ object ReactionDiffusionMesoState {
         val prevpop = s.populationGrid.flatten.sum
         var state = s
         (0 until s.mesoTimeSteps).foreach{_ =>
-          state = state.copy(time=state.time+1,populationGrid=ReactionDiffusionGridGenerator.reactionDiffusionGrid(0,s.growthRate,s.alpha,s.beta,s.ndiff,(prevpop+toadd).toInt,Some(state.populationGrid)).map(_.toVector).toVector)
+          state = state.copy(time=state.time+1,populationGrid=ReactionDiffusionGridGenerator.reactionDiffusionGrid((0,0),s.growthRate,s.alpha,s.beta,s.ndiff,(prevpop+toadd).toInt,Some(state.populationGrid)).map(_.toVector).toVector)
         }
         val newpop = state.populationGrid.flatten.sum
         state.copy(missingPopulation = toadd-(newpop-prevpop))

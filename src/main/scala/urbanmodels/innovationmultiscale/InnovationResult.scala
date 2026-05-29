@@ -23,7 +23,7 @@ case class InnovationResult(
   def macroUtilities: Seq[Double] = {
     //println(populations.colSum.toSeq)
     //println(innovationUtilities)
-    //println(innovationShares.map(_.colSum))
+    //println(innovationShares.map(_.colSum.toSeq))
     val normPop = populations%*%DenseMatrix.diagonal(populations.colSum.map(1/_))
     val perCityInnovTimeavg: Seq[Seq[Double]] = innovationShares.zip(innovationUtilities).map{case (m,u)=> (normPop*m*(u/m.ncols)).colSum.toSeq}
     perCityInnovTimeavg.transpose.map(c => c.sum / c.length.toDouble)

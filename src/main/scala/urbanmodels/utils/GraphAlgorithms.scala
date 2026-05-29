@@ -7,6 +7,8 @@ import org.jgrapht.alg.shortestpath.{DijkstraShortestPath, FloydWarshallShortest
 import org.jgrapht.alg.interfaces._
 import org.jgrapht.graph.DefaultWeightedEdge
 
+import Network.ShortestPaths
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
@@ -132,7 +134,7 @@ object GraphAlgorithms {
       * @return
       */
     def allPairsShortestPath(network: Network, linkWeight: Link => Double = _.weight): ShortestPaths = {
-      utils.log("computing shortest paths between "+network.nodes.toSeq.size+" vertices")
+      //utils.log("computing shortest paths between "+network.nodes.toSeq.size+" vertices")
       val nodenames = network.nodes.toSeq.map{_.id}
       val nodeids: Map[Int,Int] = nodenames.zipWithIndex.toMap
       val revnodes: Map[Int,Node] = network.nodes.toSeq.zipWithIndex.map{case(node,i)=>(i,node)}.toMap
@@ -338,36 +340,6 @@ object GraphAlgorithms {
 
 
   }
-
-
-
-  sealed trait CycleDetectionMethod
-  case class PatonJGraphT() extends CycleDetectionMethod
-
-
-  def cycles(network: Network, method: CycleDetectionMethod = PatonJGraphT()): Seq[Network] =
-    method match {
-      case _ : PatonJGraphT => CycleAlgorithms.cyclesPatonJGraphT(network)
-    }
-
-  object CycleAlgorithms {
-
-    /**
-      * ! returned graphs have consistent ids but no properties of initial graph (should copy ?)
-      * @param nw network
-      * @return
-      */
-    def cyclesPatonJGraphT(nw: Network): Seq[Network] = {
-      val (g,_,edgeMap) = GraphConversions.networkToJGraphT(nw)
-      val cycles = new PatonCycleBase(g).getCycleBasis.getCycles.asScala.toSeq
-      cycles.map{l =>
-        val edges = l.asScala.map{e => edgeMap((g.getEdgeSource(e),g.getEdgeTarget(e)))}.toSet
-        Network(Link.getNodes(edges),edges)
-      }
-    }
-
-  }
-
 
 
 

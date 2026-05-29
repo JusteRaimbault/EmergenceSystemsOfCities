@@ -230,7 +230,7 @@ object MultiscaleModel {
     /*assert(deltaPopLevels.sum/deltaPopLevels.size<threshold,call+" - incoherence between levels : "+deltaPopLevels+"\n"+macroState.populations+"\n"+
       mesoStates.map(_.populationGrid.flatten.sum)
     )*/
-    utils.log("total consistence adj = "+deltaPopLevels.map(math.abs).sum)
+    //utils.log("total consistence adj = "+deltaPopLevels.map(math.abs).sum)
     macroState.copy(
       populations = mesoStates.map(_.populationGrid.flatten.sum)
     )

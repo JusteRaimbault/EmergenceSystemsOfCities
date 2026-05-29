@@ -1,0 +1,108 @@
+package urbanmodels.mesomacromultiscale
+
+import urbanmodels.utils.{DenseMatrix, Matrix, RealMatrix, Statistics}
+import urbanmodels.utils.Matrix.MatrixImplementation
+
+import scala.util.Random
+
+/**
+  * A macroscopic urban dynamic model or one component
+  */
+trait MacroModel {
+  def finalTime: Int
+  def run: MacroResult
+  def nextStep(state: MacroState, populations: Seq[Double], distanceMatrix: Matrix): MacroState
+}
+
+
+
+object MacroModel {
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
+
+  def deltaMacroStates(prev: MacroStateGen,current: MacroStateGen): Vector[(Double,Double,Double)] = {
+    val prevIndics = prev.indicators
+    val currentIndics = current.indicators
+    // rq : assumed positive
+    val deltaPops = prevIndics._1.zip(currentIndics._1).map{case (p,c) => c - p}
+    val deltaPopsmax = deltaPops.max
+    val deltaAccs = prevIndics._3.zip(currentIndics._3).map{case (p,c) => c - p}
+    val deltaAccsmax = deltaAccs.max
+    deltaPops.zip(deltaPops.map(_/deltaPopsmax)).zip(deltaAccs.map(_/deltaAccsmax)).map{case ((dp,dpr),dz) => (dp,dpr,dz)}
+  }
+
+
+  /**
+    * Macroscopic step, following a superposition of processes driving growth rates
+    *  Population is updated as (P(t+1) - P(t)) / P(t) = delta_t* total growth rate
+    *
+    * @param state macro state before the step
+    * @param additiveGrowthRates components to sum for the total growth rate
+    * @param deltat time difference
+    * @return
+    */
+  def macroStep(state: MacroStateGen,
+                additiveGrowthRates: Vector[MacroGrowthRate] = Vector.empty,
+                deltat: Double = 1.0
+               ): MacroStateGen = {
+    val growthRates: Matrix = additiveGrowthRates.map(_.growthRate(state.populations)).reduce(Matrix.msum)
+    val popMat = RealMatrix(state.populations.toArray,row=false)
+    val newpops: Matrix = popMat + (popMat * deltat * growthRates)
+    //utils.log("macro Delta P = "+newpops.flatValues.zip(state.populations).map{case (np,p)=>math.abs(np-p)}.sum)
+    state.copy(time= state.time + 1, populations = newpops.flatValues.toSeq)
+  }
+
+
+
+  /**
+    * Compute generalized dist mat from dist mat
+    * as with d_{ij} the distance matrix, generalized distance is
+    *  g_{ij} = exp( - d_{ij} / d_i)
+    *
+    * @param dmat distance matrix
+    * @param decays interaction decays for each city
+    * @return
+    */
+  def generalizedDistanceMatrix(dmat: Matrix, decays: Vector[Double]): Matrix =
+    (DenseMatrix.diagonal(decays.toArray.map {1 / _}) %*% dmat).map(d => math.exp(d * (-1.0)))
+
+  /**
+    * Specific update for generalized distance given previous and new decays
+    *  ( uses the fact that access is computed with an exponential)
+    * @param dmat distance matrix
+    * @param prevDecays previous decay
+    * @param decays new decay
+    * @return
+    */
+  def updateDistanceMatrix(dmat: Matrix,prevDecays: Vector[Double],decays: Vector[Double]): Matrix =
+    dmat ^ (
+      (DenseMatrix.diagonal(decays.toArray) %*% DenseMatrix.ones(decays.size,decays.size)).map(1/_) *  // 1 / d_i (t)
+        (DenseMatrix.diagonal(prevDecays.toArray) %*% DenseMatrix.ones(prevDecays.size,prevDecays.size)) // d_i (t-1)
+      )
+
+
+
+  /**
+    * initial hierarchical synthetic city system
+    *
+    * @param n number of cities
+    * @param alpha initial hierarchy
+    * @param pmax max initial population
+    * @param worldSize world size
+    * @param dg distance decay
+    * @param rng rng
+    * @return
+    */
+  def initialSyntheticState(n: Int,
+                            alpha: Double,
+                            pmax: Double,
+                            worldSize: Double,
+                            dg: Double
+                           )(implicit rng: Random, mImpl: MatrixImplementation): MacroStateGen =
+    MacroStateGen(
+     time = 0,
+     populations = rng.shuffle(Statistics.rankSizeDistribution(n, alpha, pmax)),
+     distanceMatrix = generalizedDistanceMatrix(Matrix.randomDistanceMatrix(n, worldSize), Vector.fill(n)(dg))
+    )
+
+
+}

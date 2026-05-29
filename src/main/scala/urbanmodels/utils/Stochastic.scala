@@ -1,6 +1,10 @@
 package urbanmodels.utils
 
 import scala.util.Random
+import scala.jdk.CollectionConverters._
+
+import org.apache.commons.rng.sampling.ListSampler
+import org.apache.commons.rng.simple.RandomSource
 
 object Stochastic {
 
@@ -29,6 +33,58 @@ object Stochastic {
       )
     }
   }
+
+
+  def sampleOneBy[T](sampled: Iterable[T], probability: T => Double)(implicit rng: Random): T = {
+    def f(s: (Iterable[T],T,Double,Double)): (Iterable[T], T, Double, Double) = {
+      (s._1.tail, s._1.head, s._3 + probability (s._1.head), s._4)
+    }
+    f(Iterator.iterate((sampled,sampled.head,0.0,rng.nextDouble()))(f).takeWhile(s => s._3 < s._4&&s._1.nonEmpty).toSeq.last)._2
+  }
+
+  def sampleWithReplacementBy[T](sampled: Iterable[T], probability: T => Double, samples: Int)(implicit rng: Random): Vector[T] =
+    (0 until samples).map(_ => sampleOneBy(sampled, probability)).toVector
+
+  /**
+    * rq: fails on a Set -> be less general than Iterable?
+    * @param sampled sampled
+    * @param samples number of samples
+    * @param rng rng
+    * @tparam T type
+    * @return
+    */
+  def sampleWithReplacement[T](sampled: Iterable[T], samples: Int)(implicit rng: Random): Vector[T] =
+    sampleWithReplacementBy[T](sampled,_ => 1.0 / sampled.size.toDouble, samples)
+
+  /**
+    * Sample without replacement
+    *   ! this function is a disaster for large iterables
+    * @param sampled sampled
+    * @param probability proba function
+    * @param samples samples
+    * @param rng rng
+    * @tparam T type
+    * @return
+    */
+  def sampleWithoutReplacementBy[T](sampled: Iterable[T], probability: T => Double, samples: Int)(implicit rng: Random): Vector[T] = {
+    assert(samples <= sampled.size,"Can not sample more than vector size : "+samples+" / "+sampled.size)
+    Iterator.iterate((sampled, Vector.empty[T])) { case (rest, res) =>
+      val totproba = rest.map(probability(_)).sum // ! not efficient, could be computed from the previously sampled proba
+      val normalizedProba = rest.toSeq.map(probability(_) / totproba)
+      val sample = sampleOneBy[((T, Int), Double)](rest.toSeq.zipWithIndex.zip(normalizedProba), _._2)
+      (rest.toSeq.zipWithIndex.filter(_._2 != sample._1._2).map(_._1), Vector(sample._1._1) ++ res)
+    }.take(samples).toSeq.last._2
+  }
+
+  def sampleWithoutReplacement[T](sampled: Iterable[T], samples: Int)(implicit rng: Random): Vector[T] = {
+    if (samples<=0) Vector.empty else
+      ListSampler.sample(
+        RandomSource.MT.create(rng.nextLong().asInstanceOf[AnyRef]),
+        sampled.toList.asJava,
+        samples
+      ).asScala.toVector
+  }
+
 
 
 }

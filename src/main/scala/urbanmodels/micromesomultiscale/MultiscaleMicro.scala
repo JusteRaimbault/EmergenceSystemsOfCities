@@ -1,16 +1,8 @@
 package urbanmodels.micromesomultiscale
 
-import org.openmole.spatialdata.network.synthetic.GridNetworkGenerator
-import org.openmole.spatialdata.network.{Link, Network, Node}
-import org.openmole.spatialdata.utils
+import urbanmodels.utils.{GridNetworkGenerator, Link, Network, Node, Convolution, RandomPointsGenerator, Visualisation, Polygons}
 
-import org.openmole.spatialdata.utils.visualization
-import org.openmole.spatialdata.vector.{Attributes, Polygons}
-
-import urbanmodels.utils.Convolution
-import urbanmodels.utils.RandomPointsGenerator
-
-//import org.locationtech.jts.geom
+import org.locationtech.jts.geom
 
 import scala.collection.mutable
 import scala.util.Random
@@ -130,7 +122,7 @@ object MultiscaleMicro {
       val (x, y) = positioning(currentState)
       val (xk,yk) = ( ((x - xmin) / (buildingWidth + streetBuffer)).toInt, ((y - ymin) / (buildingWidth + streetBuffer)).toInt)
 
-      utils.log(s"Adding $numberToAdd buildings around position ($x,$y) in [$xmin,$xmax]x[$ymin,$ymax]")
+      //utils.log(s"Adding $numberToAdd buildings around position ($x,$y) in [$xmin,$xmax]x[$ymin,$ymax]")
 
       //val kxs = 0 to (xmax - xmin / (buildingWidth + streetBuffer)).toInt   //((- math.floor((x - xmin)/(buildingWidth + streetBuffer))).toInt until 0)++(0 to math.floor((xmax - x)/(buildingWidth + streetBuffer)).toInt)
       // cannot reasonably stage all possible positions - in a 10km world this yields (10000/15)^2 ~ 0.5 Mio
@@ -143,12 +135,12 @@ object MultiscaleMicro {
       //val (kxmin,kxmax,kymin,kymax) = (kxs.min, kxs.max, kys.min, kys.max)
       val ks: Seq[(Int, Int)] = kxs.flatMap(kx => kys.map(ky => (kx,ky)))
       val kdist: Seq[Double] = ks.map{case (kx,ky) => math.abs(kx-xk)+math.abs(ky-yk)}
-      utils.log(s"All slots: ${kdist.size}")
+      //utils.log(s"All slots: ${kdist.size}")
       val coords: Seq[(Double,Double)] = xcoords.flatMap(x => ycoords.map(y => (x,y)))
       val counts: mutable.HashMap[(Int,Int),Int] = new mutable.HashMap[(Int,Int),Int] // map (kx,ky) => building count
       ks.foreach(counts(_)=0)
       val existingBuildings = currentState.buildings
-      utils.log(s"Previous buildings: ${existingBuildings.polygons.size}")
+      //utils.log(s"Previous buildings: ${existingBuildings.polygons.size}")
       existingBuildings.polygons.foreach{p =>
         val e = p.getEnvelopeInternal
         val (pxmin,pxmax,pymin,pymax) = (e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
@@ -158,9 +150,9 @@ object MultiscaleMicro {
         pkxs.foreach(pkx => pkys.foreach(pky => counts((pkx,pky)) = counts((pkx,pky))+1))
       }
       val free = ks.map{counts(_)==0}
-      utils.log(s"  -> free slots: ${free.count(b => b)} - to be sorted")
+      //utils.log(s"  -> free slots: ${free.count(b => b)} - to be sorted")
       val buildingCentroids = coords.zip(free.zip(kdist)).filter(_._2._1).sortBy(_._2._2).take(numberToAdd).map(_._1)
-      utils.log(s"Building centroids: $buildingCentroids")
+      //utils.log(s"Building centroids: $buildingCentroids")
       val buildingsToAdd = buildingsFromCentroids(buildingCentroids, buildingWidth, buildingHeight, shareHousing)
       val buildings = existingBuildings++buildingsToAdd
 
@@ -186,7 +178,7 @@ object MultiscaleMicro {
     def buildingsFromCentroids(centroids: Seq[(Double,Double)], width: Double, height: Int, shareHousing: Double)(implicit rng: Random): Polygons = {
       val fact = new geom.GeometryFactory
       val polygons: Seq[geom.Polygon] = centroids.map{case (x,y) => fact.createPolygon(Array(new geom.Coordinate(x - width/2,y - width / 2),new geom.Coordinate(x - width/2, y + width / 2),new geom.Coordinate(x + width / 2, y + width / 2),new geom.Coordinate(x + width / 2, y - width / 2),new geom.Coordinate(x - width / 2,y - width / 2)))}
-      val attrs: Seq[Attributes] = centroids.map(_ => {Map("type" -> (if (rng.nextDouble()<shareHousing) 0 else 1).asInstanceOf[AnyRef], "height" -> height.asInstanceOf[AnyRef])})
+      val attrs: Seq[Map[String,AnyRef]] = centroids.map(_ => {Map("type" -> (if (rng.nextDouble()<shareHousing) 0 else 1).asInstanceOf[AnyRef], "height" -> height.asInstanceOf[AnyRef])})
       Polygons(polygons, attrs)
     }
 
@@ -373,8 +365,8 @@ object MultiscaleMicro {
       */
     def initialNetwork(worldSize: Int, patchSize: Double, nCenters: Int, transportationLinkSpeed: Double)(implicit rng: Random): TransportationNetwork = {
       val gridnw = GridNetworkGenerator((worldSize*patchSize).toInt, patchSize, patchSize, withDiagLinks = true).generateNetwork
-      utils.log("Grid nw: |V|="+gridnw.nodes.size+" ; |E|="+gridnw.links.size)
-      val centreCoords = RandomPointsGenerator(nCenters).generatePoints.asPointSeq.map{case (x,y) => (x*worldSize*patchSize,y*worldSize*patchSize)}
+      //utils.log("Grid nw: |V|="+gridnw.nodes.size+" ; |E|="+gridnw.links.size)
+      val centreCoords = RandomPointsGenerator(nCenters).generatePoints.toSeq.map{case (x,y) => (x*worldSize*patchSize,y*worldSize*patchSize)}
       val (xc,yc) = (centreCoords.map(_._1).sum / nCenters.toDouble,centreCoords.map(_._2).sum / nCenters.toDouble)
       // (xc',yc') = worldSize*patchSize / 2 => Delta x = worldSize*patchSize / 2 - xc => x' = x + worldSize*patchSize / 2 - xc
       val translatedCoords = centreCoords.map{case (x,y) => (x + (worldSize*patchSize) / 2 - xc, y + (worldSize*patchSize) / 2 - yc)}
@@ -382,11 +374,11 @@ object MultiscaleMicro {
       val centres: Seq[Node] = translatedCoords.map {case (x,y) =>
         gridnw.nodes.map(n => (math.sqrt(math.pow(n.position._1 - x,2.0) + math.pow(n.position._2 - y,2.0)),n)).minBy(_._1)._2
       }
-      utils.log("Centres: "+centres)
+      //utils.log("Centres: "+centres)
       // connect initial stations
       val initialTrLinks = Network(centres.toSet, Set.empty[Link]).weakComponentConnect.links.map(_.copy(weight = 1 / transportationLinkSpeed))
       val nw = gridnw.addLinks(initialTrLinks)
-      utils.log(s"Network nodes coordinates in [${nw.nodes.map(_.position._1).min}, ${nw.nodes.map(_.position._1).max}] x [${nw.nodes.map(_.position._2).min}, ${nw.nodes.map(_.position._2).max}]")
+      //utils.log(s"Network nodes coordinates in [${nw.nodes.map(_.position._1).min}, ${nw.nodes.map(_.position._1).max}] x [${nw.nodes.map(_.position._2).min}, ${nw.nodes.map(_.position._2).max}]")
       TransportationNetwork(nw, centres, initialTrLinks.toSeq, centres)
     }
 
@@ -534,18 +526,18 @@ object MultiscaleMicro {
     val lastpolys = result.states.last.buildings
 
     val hmax = lastpolys.attributes.map(_.getOrElse("height",0).asInstanceOf[Int]).max
-    val (xcoords,ycoords) = nws.flatMap(_.nodes.toSeq.map(_.position)).unzip
+    val (xcoords,ycoords): (Seq[Double], Seq[Double]) = nws.flatMap(_.nodes.toSeq.map(_.position)).unzip
     val (minx,maxx,miny,maxy) = (xcoords.min,xcoords.max,ycoords.min,ycoords.max)
     val polygons = Seq(lastpolys.copy(
-      attributes = lastpolys.attributes.map(a => (a.toSeq++Seq("color" -> a.getOrElse("height",0).asInstanceOf[Int].toDouble/hmax.toDouble)).toMap.asInstanceOf[Attributes]),
+      attributes = lastpolys.attributes.map(a => (a.toSeq++Seq("color" -> a.getOrElse("height",0).asInstanceOf[Int].toDouble/hmax.toDouble)).toMap.asInstanceOf[Map[String,AnyRef]]),
       polygons = lastpolys.rescale((minx,maxx,miny,maxy)).polygons
     ))
-    visualization.staticVectorVisualization(
+    Visualisation.staticVectorVisualization(
       networks =nws,
       edgeScaling = {l => if (lasttrnw.links.contains(l)) 5.0 else 0.0},
       edgeColoring = {l => if (lasttrnw.links.contains(l)) 2 else 0},
       nodeColoring = {n => if(lasttrnw.centres.contains(n)) 2 else 1 },
-      nodePositioning = visualization.normalizedPositionNode(nws),
+      nodePositioning = Visualisation.normalizedPositionNode(nws),
       nodeScaling =  {n => if(lasttrnw.centres.contains(n)) 5.0 else 0.0 },
       nodeShaping = {_ => 1},
       polygons = polygons,
