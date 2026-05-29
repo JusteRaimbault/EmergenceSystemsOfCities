@@ -18,15 +18,16 @@ val gammaUtility = Val[Double]
 
 val model = ScalaTask("""
   |import scala.util.Random
-  |import innovationmultiscale._
+  |import urbanmodels.innovationmultiscale._
+  |import urbanmodels.utils.Statistics
   |import input._
   |
-  |//implicit val rng: Random = new Random(input.replication)
-  |implicit val rng: Random = new Random()
+  |implicit val rng: Random = new Random(replication)
+  |//implicit val rng: Random = new Random()
   |
   |val model = InnovationMultiscale(
   |  seed = rng.nextLong(),
-  |  finalTime = 50,
+  |  finalTime = 30,
   |  setupSyntheticCities = 10,
   |  setupSyntheticHierarchy = 1.0,
   |  setupSyntheticMaxPop = 10000.0,
@@ -63,26 +64,26 @@ val model = ScalaTask("""
   |val (gammaUtility,gammaUtilityStd) = Statistics.gammaWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
   """.stripMargin
     ) set (
-  plugins += pluginsOf[innovationmultiscale.State],
+  plugins += pluginsOf[urbanmodels.innovationmultiscale.InnovationState],
   (inputs, outputs) += (macroGravityDecay, macroInnovationDecay, mesoCrossOverProba, mesoMutationProba, mesoInteractionProba,
-    mesoToMacroInnovationThreshold, macroToMesoCrossoverMaxUpdate, macroToMesoMutationMaxUpdate, macroToMesoExchangeMaxUpdate),
+    mesoToMacroInnovationThreshold, macroToMesoCrossoverMaxUpdate, macroToMesoMutationMaxUpdate, macroToMesoExchangeMaxUpdate, replication),
   outputs += (psiUtility,deltaUtility,gammaUtility)
 )
 
-val purpose = "PSE"
+val purpose = "PSE-Innovation"
 //val purpose = "TEST"
 
 val timestamp = ((new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")).format(new java.util.Date()))
 val resdir = (timestamp+"_"+purpose)
 
-val env = LocalEnvironment(6)
-//val env = EGIEnvironment("vo.complex-systems.eu")
+//val env = LocalEnvironment(2)
+val env = MiniClustEnvironment("jraimbault","https://babar.openmole.org")
 
 
 PSEEvolution(
   evaluation = model,
-  parallelism = 6,
-  termination = 1000,
+  parallelism = 100,
+  termination = 1000000,
   genome = Seq(
     macroGravityDecay in (0.1,1.1),
     macroInnovationDecay in (0.1,1.1),
@@ -99,6 +100,6 @@ PSEEvolution(
     deltaUtility  in (0.0 to 2.0 by 0.1),
     gammaUtility in (0.0 to 0.5 by 0.05)
   ),
-  //stochastic = Stochastic(seed = replication),
-  //distribution = Island(60 minutes)
+  stochastic = Stochastic(seed = replication),
+  distribution = Island(20 minutes)
 ) on env hook (workDirectory / "pse" / resdir)//,frequency = 100)
