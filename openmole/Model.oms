@@ -59,9 +59,12 @@ val model = ScalaTask("""
   |)
   |val result = model.run
   |
-  |val (psiUtility,psiUtilityStd) = Statistics.psiWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
-  |val (deltaUtility,deltaUtilityStd) = Statistics.deltaWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
-  |val (gammaUtility,gammaUtilityStd) = Statistics.gammaWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
+  |//val (psiUtility,psiUtilityStd) = Statistics.psiWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
+  |//val (deltaUtility,deltaUtilityStd) = Statistics.deltaWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
+  |//val (gammaUtility,gammaUtilityStd) = Statistics.gammaWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
+  |val psiUtility = Statistics.psi(result.mesoTimeSeries,result.macroUtilities)
+  |val deltaUtility = Statistics.delta(result.mesoTimeSeries,result.macroUtilities)
+  |val gammaUtility = Statistics.gamma(result.mesoTimeSeries,result.macroUtilities)
   """.stripMargin
     ) set (
   plugins += pluginsOf[urbanmodels.innovationmultiscale.InnovationState],
