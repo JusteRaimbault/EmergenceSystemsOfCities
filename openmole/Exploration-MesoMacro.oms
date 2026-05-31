@@ -1,0 +1,168 @@
+// parameters
+val timeSteps = Val[Int]
+val macroNcities = Val[Int]
+val macroInitialHierarchy = Val[Double]
+val macroInitialMaxPop = Val[Double]
+val macroRange = Val[Double]
+val mesoGridSize = Val[Int]
+val mesoCenterDensity = Val[Int]
+
+val macroGrowthRate = Val[Double]
+val macroInteractionDecay = Val[Double]
+val macroInteractionWeight = Val[Double]
+val macroInteractionGamma = Val[Double]
+
+val mesoAlpha = Val[Double]
+val mesoBeta = Val[Double]
+val mesoNdiff = Val[Double]
+val mesoTimeSteps = Val[Double]
+
+val macroMesoBetaUpdateMax = Val[Double]
+val macroMesoAlphaUpdateMax = Val[Double]
+val mesoMacroCongestionCost = Val[Double]
+val mesoMacroDecayUpdateMax = Val[Double]
+
+val replication = Val[Long]
+val id = Val[Int]
+
+// indicators
+val macroPopulations = Val[Array[Double]]
+val macroClosenesses = Val[Array[Double]]
+val macroAccessibilities = Val[Array[Double]]
+val mesoMorans = Val[Array[Double]]
+val mesoDistances = Val[Array[Double]]
+val mesoEntropy = Val[Array[Double]]
+val mesoSlopes = Val[Array[Double]]
+val mesoSlopeRsquared = Val[Array[Double]]
+val mesoCongestedFlows = Val[Array[Double]]
+val mesoMissingPopulations = Val[Array[Double]]
+
+val psiPopulation = Val[Double]
+val deltaPopulation = Val[Double]
+val gammaPopulation = Val[Double]
+val psiCloseness = Val[Double]
+val deltaCloseness = Val[Double]
+val gammaCloseness = Val[Double]
+val psiAccessibility = Val[Double]
+val deltaAccessibility = Val[Double]
+val gammaAccessibility = Val[Double]
+
+val model = ScalaTask(
+  """
+  |import scala.util.Random
+  |import urbanmodels.mesomacromultiscale._
+  |import urbanmodels.utils.Matrix.{Dense, MatrixImplementation}
+  |import urbanmodels.utils.{DenseMatrix, Statistics}
+  |import input._
+  |
+  |implicit val rng: Random = new Random(replication)
+  |implicit  val matrixImplem: MatrixImplementation = Dense(DenseMatrix.Real())
+  |
+  |val model = MultiscaleModel(
+  |  timeSteps = timeSteps,
+  |  macroNcities = macroNcities,
+  |  macroInitialHierarchy = macroInitialHierarchy,
+  |  macroInitialMaxPop = macroInitialMaxPop,
+  |  macroRange=macroRange,
+  |  macroGrowthRate = macroGrowthRate,
+  |  macroInteractionDecay = macroInteractionDecay,
+  |  macroInteractionWeight=macroInteractionWeight,
+  |  macroInteractionGamma=macroInteractionGamma,
+  |  mesoGridSize=mesoGridSize,
+  |  mesoCenterDensity=mesoCenterDensity,
+  |  mesoAlpha = mesoAlpha,
+  |  mesoBeta=mesoBeta,
+  |  mesoNdiff = mesoNdiff.toInt,
+  |  mesoTimeSteps = mesoTimeSteps.toInt,
+  |  macroMesoAlphaUpdateMax = macroMesoAlphaUpdateMax,
+  |  macroMesoBetaUpdateMax = macroMesoBetaUpdateMax,
+  |  mesoMacroCongestionCost = mesoMacroCongestionCost,
+  |  mesoMacroDecayUpdateMax = mesoMacroDecayUpdateMax
+  |)
+  |
+  |val result = model.modelRun(true)(rng,matrixImplem)
+  |
+  |val (macroPopulations,macroClosenesses,macroAccessibilities,mesoMorans,mesoDistances,mesoEntropy,mesoSlopes,mesoSlopeRsquared,mesoCongestedFlows,mesoMissingPopulations):(Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double]) = result.asArrayTuple
+  |//val mesoTimeSeries: Seq[Seq[Double]] = Seq(mesoMorans.toSeq)++Seq(mesoDistances.toSeq)++Seq(mesoEntropy.toSeq)++Seq(mesoSlopes.toSeq)++Seq(mesoSlopeRsquared.toSeq)++Seq(mesoCongestedFlows.toSeq)
+  |
+  |val (macroPopulationsTS,macroClosenessesTS,macroAccessibilitiesTS): (Seq[Double], Seq[Double], Seq[Double])= result.timeSeriesOfMacroAverages
+  |val mesoTimeSeries: Seq[Seq[Double]] = result.timeSeriesOfMesoIndicators
+  |
+  |val psiPopulation = Statistics.psi(mesoTimeSeries,macroPopulationsTS)
+  |val deltaPopulation = Statistics.delta(mesoTimeSeries,macroPopulationsTS)
+  |val gammaPopulation = Statistics.gamma(mesoTimeSeries,macroPopulationsTS)
+  |
+  |val psiCloseness = Statistics.psi(mesoTimeSeries,macroClosenessesTS)
+  |val deltaCloseness = Statistics.delta(mesoTimeSeries,macroClosenessesTS)
+  |val gammaCloseness = Statistics.gamma(mesoTimeSeries,macroClosenessesTS)
+  |
+  |val psiAccessibility = Statistics.psi(mesoTimeSeries,macroAccessibilitiesTS)
+  |val deltaAccessibility = Statistics.delta(mesoTimeSeries,macroAccessibilitiesTS)
+  |val gammaAccessibility = Statistics.gamma(mesoTimeSeries,macroAccessibilitiesTS)
+  """.stripMargin
+) set (
+    plugins += pluginsOf[urbanmodels.mesomacromultiscale.MultiscaleState],
+  (inputs,outputs) += (timeSteps,macroNcities,macroInitialHierarchy,macroInitialMaxPop,macroRange,macroGrowthRate,macroInteractionDecay,macroInteractionWeight,macroInteractionGamma,
+    mesoGridSize,mesoCenterDensity,mesoAlpha,mesoBeta,mesoNdiff,mesoTimeSteps,macroMesoAlphaUpdateMax,macroMesoBetaUpdateMax,mesoMacroCongestionCost,mesoMacroDecayUpdateMax,replication,id),
+  outputs += (macroPopulations,macroClosenesses,macroAccessibilities,mesoMorans,mesoDistances,mesoEntropy,mesoSlopes,mesoSlopeRsquared,mesoCongestedFlows,mesoMissingPopulations),
+  outputs += (psiPopulation,deltaPopulation,gammaPopulation,psiCloseness,deltaCloseness,gammaCloseness,psiAccessibility,deltaAccessibility,gammaAccessibility),
+  timeSteps := 20,macroNcities := 20,macroInitialHierarchy:=1.0,macroInitialMaxPop:=100000.0,macroRange:=500.0,mesoGridSize:=50,mesoCenterDensity:=1000
+)
+
+val purpose = "Exploration-MesoMacro"
+
+val timestamp = ((new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")).format(new java.util.Date()))
+val resdir = (timestamp+"_"+purpose)
+
+val env = LocalEnvironment(5)
+
+
+
+DirectSampling(
+  evaluation = model,
+  sampling = (
+      LHS(sample = 100,factor = Seq(
+        macroGrowthRate in Range(0.0,0.05),
+        macroInteractionDecay in Range(20.0,500.0),
+        macroInteractionWeight in Range(0.0,0.01),
+        macroInteractionGamma in Range(0.5,5.0),
+        mesoAlpha in Range(0.5,5.0),
+        mesoBeta in Range(0.0,0.1),
+        mesoNdiff in Range(1.0,5.0),
+        mesoTimeSteps in Range(1.0,20.0)//,
+        /*macroMesoAlphaUpdateMax in Range(-0.1,0.1),
+        macroMesoBetaUpdateMax in Range(-0.1,0.1),
+        mesoMacroCongestionCost in Range(0.5,2.0),
+        mesoMacroDecayUpdateMax in Range(-0.1,0.1)*/
+      )
+      )
+//      withIndex id)
+//      x (replication in (UniformDistribution[Int](10000) take 10))
+//    sampling = ((
+    //(macroGrowthRate in (0.0 to 0.05 by 0.05))
+    //(macroGrowthRate is 0.0)
+    //x (macroInteractionDecay in (10.0 to 1000.0 by 10.0))
+    //x (macroInteractionDecay is 100.0)
+    //x (macroInteractionWeight in (0.001 to 0.011 by 0.01))
+    //x (macroInteractionWeight is 0.01)
+    //x (macroInteractionGamma in (0.5 to 5.0 by 4.5))
+    //x (macroInteractionGamma is 2.0)
+    //x (mesoAlpha in (0.5 to 5.0 by 4.5))
+    //x (mesoAlpha is 1.0)
+    //x (mesoBeta in (0.0 to 0.1 by 0.1))
+    //x (mesoBeta is 0.1)
+    //x (mesoNdiff is 1.0)
+    //x (mesoTimeSteps in (1.0 to 21.0 by 1.0))
+    //x (mesoTimeSteps is 10.0)
+    x (macroMesoAlphaUpdateMax in (-0.1 to 0.1 by 0.1))
+    //x (macroMesoAlphaUpdateMax is 0.05)
+    x (macroMesoBetaUpdateMax in (-0.1 to 0.1 by 0.1))
+    //x (macroMesoBetaUpdateMax is 0.05)
+    x (mesoMacroCongestionCost in (0.0 to 2.0 by 2.0))
+    //x (mesoMacroCongestionCost is 2.0)
+    x (mesoMacroDecayUpdateMax in (-0.1 to 0.1 by 0.1))
+    //x (mesoMacroDecayUpdateMax is 0.05)
+    x (replication in RandomSequence[Long](max = 10000000L, size = 1))
+  )
+  withIndex id
+) on env hook (workDirectory / "exploration" / resdir)
