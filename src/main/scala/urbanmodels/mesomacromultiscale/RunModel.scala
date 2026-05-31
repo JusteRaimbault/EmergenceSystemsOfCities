@@ -34,6 +34,22 @@ object RunModel extends App {
 
   val result = model.modelRun(true)(rng,matrixImplem)
 
-  val (macroPopulations,macroClosenesses,macroAccessibilities,mesoMorans,mesoDistances,mesoEntropy,mesoSlopes,mesoSlopeRsquared,mesoCongestedFlows,mesoMissingPopulations):(Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double]) = result.asArrayTuple
+  //val (macroPopulations,macroClosenesses,macroAccessibilities,mesoMorans,mesoDistances,mesoEntropy,mesoSlopes,mesoSlopeRsquared,mesoCongestedFlows,mesoMissingPopulations):(Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double]) = result.asArrayTuple
+  //val mesoTimeSeries: Seq[Seq[Double]] = Seq(mesoMorans.toSeq)++Seq(mesoDistances.toSeq)++Seq(mesoEntropy.toSeq)++Seq(mesoSlopes.toSeq)++Seq(mesoSlopeRsquared.toSeq)++Seq(mesoCongestedFlows.toSeq)
+
+  val (macroPopulations,macroClosenesses,macroAccessibilities): (Seq[Double], Seq[Double], Seq[Double])= result.timeSeriesOfMacroAverages
+  val mesoTimeSeries: Seq[Seq[Double]] = result.timeSeriesOfMesoIndicators
+
+  println(s"Psi (populations) = ${Statistics.psi(mesoTimeSeries,macroPopulations)}")
+  println(s"Delta (populations) = ${Statistics.delta(mesoTimeSeries,macroPopulations)}")
+  println(s"Gamma (populations) = ${Statistics.gamma(mesoTimeSeries,macroPopulations)}")
+
+  println(s"Psi (closeness) = ${Statistics.psi(mesoTimeSeries,macroClosenesses)}")
+  println(s"Delta (closeness) = ${Statistics.delta(mesoTimeSeries,macroClosenesses)}")
+  println(s"Gamma (closeness) = ${Statistics.gamma(mesoTimeSeries,macroClosenesses)}")
+
+  println(s"Psi (accessibility) = ${Statistics.psi(mesoTimeSeries,macroAccessibilities)}")
+  println(s"Delta (accessibility) = ${Statistics.delta(mesoTimeSeries,macroAccessibilities)}")
+  println(s"Gamma (accessibility) = ${Statistics.gamma(mesoTimeSeries,macroAccessibilities)}")
 
 }

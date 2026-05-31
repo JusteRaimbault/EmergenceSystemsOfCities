@@ -54,6 +54,26 @@ case class MultiscaleResult(
     (popMacroHierarchy,averageMesoAggregation,averageMesoDistance)
   }
 
+  def timeSeriesOfMacroAverages: (Seq[Double], Seq[Double], Seq[Double]) = {
+    val macroIndics: Vector[(Vector[Double],Vector[Double],Vector[Double])] = rawStates.map{_.macroState.indicators}
+    val ncities = macroIndics(0)._1.size.toDouble
+    val tsAveragePopulation = macroIndics.map(_._1.sum/ncities).toSeq
+    val tsAverageCloseness = macroIndics.map(_._2.sum/ncities).toSeq
+    val tsAverageAccessibility = macroIndics.map(_._3.sum/ncities).toSeq
+    (tsAveragePopulation, tsAverageCloseness, tsAverageAccessibility)
+  }
+
+  def timeSeriesOfMesoIndicators: Seq[Seq[Double]] = {
+    val morphologies: Seq[Seq[(Double,Double,Double,Double,Double)]] = rawStates.map{_.mesoStates.map{_.morphology}.toSeq}.toSeq
+    val morans = morphologies.map(_.map(_._1)).transpose
+    val distances = morphologies.map(_.map(_._2)).transpose
+    val entropy = morphologies.map(_.map(_._3)).transpose
+    val slopes = morphologies.map(_.map(_._4)).transpose
+    val slopeRsquared = morphologies.map(_.map(_._5)).transpose
+    val congestedFlows = rawStates.toSeq.map(_.parameters.congestedFlows.toSeq).transpose
+    morans++distances++entropy++slopes++slopeRsquared++congestedFlows
+  }
+
 
 
 }

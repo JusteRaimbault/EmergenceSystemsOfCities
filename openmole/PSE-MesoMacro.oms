@@ -1,0 +1,120 @@
+val macroGrowthRate = Val[Double]
+val macroInteractionDecay = Val[Double]
+val macroInteractionWeight = Val[Double]
+val macroInteractionGamma = Val[Double]
+val mesoAlpha = Val[Double]
+val mesoBeta = Val[Double]
+val mesoNdiff = Val[Double]
+val mesoTimeSteps = Val[Double]
+val macroMesoBetaUpdateMax = Val[Double]
+val macroMesoAlphaUpdateMax = Val[Double]
+val mesoMacroCongestionCost = Val[Double]
+val mesoMacroDecayUpdateMax = Val[Double]
+
+val replication = Val[Long]
+
+val psiPopulation = Val[Double]
+val deltaPopulation = Val[Double]
+val gammaPopulation = Val[Double]
+//val psiCloseness = Val[Double]
+//val deltaCloseness = Val[Double]
+//val gammaCloseness = Val[Double]
+//val psiAccessibility = Val[Double]
+//val deltaAccessibility = Val[Double]
+//val gammaAccessibility = Val[Double]
+
+
+val model = ScalaTask(
+  """
+  |import scala.util.Random
+  |import urbanmodels.mesomacromultiscale._
+  |import urbanmodels.utils.Matrix.{Dense, MatrixImplementation}
+  |import urbanmodels.utils.{DenseMatrix, Statistics}
+  |import input._
+  |
+  |implicit val rng: Random = new Random(-321205711823065277L)
+  |implicit  val matrixImplem: MatrixImplementation = Dense(DenseMatrix.Real())
+  |
+  |val model = MultiscaleModel(
+  |  timeSteps = 20,
+  |  macroNcities = 20,
+  |  macroInitialHierarchy = 1.0,
+  |  macroInitialMaxPop = 100000.0,
+  |  macroRange=500.0,
+  |  macroGrowthRate = macroGrowthRate,
+  |  macroInteractionDecay = macroInteractionDecay,
+  |  macroInteractionWeight=macroInteractionWeight,
+  |  macroInteractionGamma=macroInteractionGamma,
+  |  mesoGridSize=50,
+  |  mesoCenterDensity=1000,
+  |  mesoAlpha = mesoAlpha,
+  |  mesoBeta=mesoBeta,
+  |  mesoNdiff = mesoNdiff.toInt,
+  |  mesoTimeSteps = mesoTimeSteps.toInt,
+  |  macroMesoAlphaUpdateMax = macroMesoAlphaUpdateMax,
+  |  macroMesoBetaUpdateMax = macroMesoBetaUpdateMax,
+  |  mesoMacroCongestionCost = mesoMacroCongestionCost,
+  |  mesoMacroDecayUpdateMax = mesoMacroDecayUpdateMax
+  |)
+  |
+  |val result = model.modelRun(true)(rng,matrixImplem)
+  |
+  |val (macroPopulationsTS,macroClosenessesTS,macroAccessibilitiesTS): (Seq[Double], Seq[Double], Seq[Double])= result.timeSeriesOfMacroAverages
+  |val mesoTimeSeries: Seq[Seq[Double]] = result.timeSeriesOfMesoIndicators
+  |
+  |val psiPopulation = Statistics.psi(mesoTimeSeries,macroPopulationsTS)
+  |val deltaPopulation = Statistics.delta(mesoTimeSeries,macroPopulationsTS)
+  |val gammaPopulation = Statistics.gamma(mesoTimeSeries,macroPopulationsTS)
+  |
+  |//val psiCloseness = Statistics.psi(mesoTimeSeries,macroClosenessesTS)
+  |//val deltaCloseness = Statistics.delta(mesoTimeSeries,macroClosenessesTS)
+  |//val gammaCloseness = Statistics.gamma(mesoTimeSeries,macroClosenessesTS)
+  |
+  |//val psiAccessibility = Statistics.psi(mesoTimeSeries,macroAccessibilitiesTS)
+  |//val deltaAccessibility = Statistics.delta(mesoTimeSeries,macroAccessibilitiesTS)
+  |//val gammaAccessibility = Statistics.gamma(mesoTimeSeries,macroAccessibilitiesTS)
+  """.stripMargin
+) set (
+    plugins += pluginsOf[urbanmodels.mesomacromultiscale.MultiscaleState],
+  (inputs,outputs) += (macroGrowthRate,macroInteractionDecay,macroInteractionWeight,macroInteractionGamma,
+    mesoAlpha,mesoBeta,mesoNdiff,mesoTimeSteps,macroMesoAlphaUpdateMax,macroMesoBetaUpdateMax,mesoMacroCongestionCost,mesoMacroDecayUpdateMax,replication),
+  outputs += (psiPopulation,deltaPopulation,gammaPopulation)//,psiCloseness,deltaCloseness,gammaCloseness,psiAccessibility,deltaAccessibility,gammaAccessibility)
+)
+
+
+val purpose = "PSE-MesoMacro-Populations"
+//val purpose = "TEST"
+
+val timestamp = ((new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")).format(new java.util.Date()))
+val resdir = (timestamp+"_"+purpose)
+
+val env = LocalEnvironment(10)
+//val env = MiniClustEnvironment("jraimbault","https://babar.openmole.org")
+
+
+PSEEvolution(
+  evaluation = model,
+  parallelism = 10,
+  termination = 1000000,
+  genome = Seq(
+    macroGrowthRate in (0.0,0.05),
+    macroInteractionDecay in (20.0,500.0),
+    macroInteractionWeight in (0.0,0.01),
+    macroInteractionGamma in (0.5,5.0),
+    mesoAlpha in (0.5,5.0),
+    mesoBeta in (0.0,0.1),
+    mesoNdiff in (1.0,5.0),
+    mesoTimeSteps in (1.0,20.0),
+    macroMesoAlphaUpdateMax in (-0.1,0.1),
+    macroMesoBetaUpdateMax in (-0.1,0.1),
+    mesoMacroCongestionCost in (0.5,2.0),
+    mesoMacroDecayUpdateMax in (-0.1,0.1)
+  ),
+  objective = Seq(
+    psiPopulation in (0.0 to 2.0 by 0.1),
+    deltaPopulation  in (0.0 to 2.0 by 0.1),
+    gammaPopulation in (0.0 to 0.5 by 0.05)
+  ),
+  stochastic = Stochastic(seed = replication)//,
+  //distribution = Island(20 minutes)
+) on env hook (workDirectory / "pse" / resdir,frequency = 1000)

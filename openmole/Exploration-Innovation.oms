@@ -1,0 +1,107 @@
+val macroGravityDecay = Val[Double]
+val macroInnovationDecay = Val[Double]
+val mesoCrossOverProba = Val[Double]
+val mesoMutationProba = Val[Double]
+val mesoInteractionProba = Val[Double]
+
+val mesoToMacroInnovationThreshold = Val[Double]
+val macroToMesoCrossoverMaxUpdate = Val[Double]
+val macroToMesoMutationMaxUpdate = Val[Double]
+val macroToMesoExchangeMaxUpdate = Val[Double]
+
+val id = Val[Int]
+val replication = Val[Long]
+
+val psiUtility = Val[Double]
+val deltaUtility = Val[Double]
+val gammaUtility = Val[Double]
+
+val psiDiversity = Val[Double]
+val deltaDiversity = Val[Double]
+val gammaDiversity = Val[Double]
+
+val model = ScalaTask("""
+  |import scala.util.Random
+  |import urbanmodels.innovationmultiscale._
+  |import urbanmodels.utils.Statistics
+  |import input._
+  |
+  |implicit val rng: Random = new Random(replication)
+  |//implicit val rng: Random = new Random()
+  |
+  |val model = InnovationMultiscale(
+  |  seed = rng.nextLong(),
+  |  finalTime = 30,
+  |  setupSyntheticCities = 10,
+  |  setupSyntheticHierarchy = 1.0,
+  |  setupSyntheticMaxPop = 10000.0,
+  |  setupFirmSizeScaling = 1.0,
+  |  setupLargestFirmSize = 100.0,
+  |  setupFirmsNumberScaling = 1.0,
+  |  setupLargestClusterSize = 20.0,
+  |  setupLargestFirmSizeScaling = 1.0,
+  |  macroGrowthRate = 0.0,
+  |  macroInnovationWeight = 0.01,
+  |  macroGravityDecay = macroGravityDecay,
+  |  macroInnovationDecay = macroInnovationDecay,
+  |  macroEarlyAdoptersRate = 0.2,
+  |  macroUtilityStd = 1.0,
+  |  macroInitialInnovationUtility = 1.0,
+  |  mesoGenomeSize = 10,
+  |  mesoTimeSteps = 50,
+  |  mesoCrossOverProba = mesoCrossOverProba,
+  |  mesoCrossOverShare = 0.5,
+  |  mesoMutationProba = mesoMutationProba,
+  |  mesoMutationAmplitude = 1.0,
+  |  mesoCurrentProductShare = 0.5,
+  |  mesoInteractionProba = mesoInteractionProba,
+  |  mesoDistanceDecay = 100.0,
+  |  mesoToMacroInnovationThreshold = mesoToMacroInnovationThreshold,
+  |  macroToMesoCrossoverMaxUpdate = macroToMesoCrossoverMaxUpdate,
+  |  macroToMesoMutationMaxUpdate = macroToMesoMutationMaxUpdate,
+  |  macroToMesoExchangeMaxUpdate =  macroToMesoExchangeMaxUpdate
+  |)
+  |val result = model.run
+  |
+  |//val (psiUtility,psiUtilityStd) = Statistics.psiWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
+  |//val (deltaUtility,deltaUtilityStd) = Statistics.deltaWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
+  |//val (gammaUtility,gammaUtilityStd) = Statistics.gammaWithStd(result.mesoTimeSeries,result.macroUtilities)(rng)
+  |val psiUtility = Statistics.psi(result.mesoTimeSeries,result.macroUtilities)
+  |val deltaUtility = Statistics.delta(result.mesoTimeSeries,result.macroUtilities)
+  |val gammaUtility = Statistics.gamma(result.mesoTimeSeries,result.macroUtilities)
+  |val psiDiversity = Statistics.psi(result.mesoTimeSeries,result.macroDiversities)
+  |val deltaDiversity = Statistics.delta(result.mesoTimeSeries,result.macroDiversities)
+  |val gammaDiversity = Statistics.gamma(result.mesoTimeSeries,result.macroDiversities)
+  """.stripMargin
+    ) set (
+  plugins += pluginsOf[urbanmodels.innovationmultiscale.InnovationState],
+  (inputs, outputs) += (macroGravityDecay, macroInnovationDecay, mesoCrossOverProba, mesoMutationProba, mesoInteractionProba,
+    mesoToMacroInnovationThreshold, macroToMesoCrossoverMaxUpdate, macroToMesoMutationMaxUpdate, macroToMesoExchangeMaxUpdate, replication),
+  outputs += (psiUtility,deltaUtility,gammaUtility,psiDiversity,deltaDiversity,gammaDiversity)
+)
+
+val purpose = "Exploration-Innovation"
+
+val timestamp = ((new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")).format(new java.util.Date()))
+val resdir = (timestamp+"_"+purpose)
+
+val env = LocalEnvironment(5)
+
+
+DirectSampling(
+  evaluation = model,
+  sampling = (
+      LHS(sample=100,factor = Seq(
+        macroGravityDecay in (0.1,1.1),
+        macroInnovationDecay in (0.1,1.1),
+        mesoCrossOverProba in (0.2,0.5),
+        mesoMutationProba in (0.001,0.01),
+        mesoInteractionProba in (0.000001, 0.00001)
+        )) x
+    (mesoToMacroInnovationThreshold in Seq(1.0,2.0)) x
+    (macroToMesoCrossoverMaxUpdate in Seq(-0.001,0.0,0.001)) x
+    (macroToMesoMutationMaxUpdate in Seq(-0.0001,0.0,0.0001)) x
+    (macroToMesoExchangeMaxUpdate in (-0.0000001,0.0,0.0000001)) x 
+    (replication in RandomSequence[Long](max = 10000000L, size = 1))
+  )
+) on env hook (workDirectory / "exploration" / resdir)
