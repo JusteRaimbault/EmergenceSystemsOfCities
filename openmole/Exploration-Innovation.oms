@@ -85,7 +85,7 @@ val purpose = "Exploration-Innovation"
 val timestamp = ((new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")).format(new java.util.Date()))
 val resdir = (timestamp+"_"+purpose)
 
-val env = LocalEnvironment(5)
+val env = LocalEnvironment(10)
 
 
 DirectSampling(

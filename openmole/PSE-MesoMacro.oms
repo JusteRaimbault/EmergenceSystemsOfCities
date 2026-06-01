@@ -13,12 +13,12 @@ val mesoMacroDecayUpdateMax = Val[Double]
 
 val replication = Val[Long]
 
-val psiPopulation = Val[Double]
-val deltaPopulation = Val[Double]
-val gammaPopulation = Val[Double]
-//val psiCloseness = Val[Double]
-//val deltaCloseness = Val[Double]
-//val gammaCloseness = Val[Double]
+//val psiPopulation = Val[Double]
+//val deltaPopulation = Val[Double]
+//val gammaPopulation = Val[Double]
+val psiCloseness = Val[Double]
+val deltaCloseness = Val[Double]
+val gammaCloseness = Val[Double]
 //val psiAccessibility = Val[Double]
 //val deltaAccessibility = Val[Double]
 //val gammaAccessibility = Val[Double]
@@ -62,13 +62,13 @@ val model = ScalaTask(
   |val (macroPopulationsTS,macroClosenessesTS,macroAccessibilitiesTS): (Seq[Double], Seq[Double], Seq[Double])= result.timeSeriesOfMacroAverages
   |val mesoTimeSeries: Seq[Seq[Double]] = result.timeSeriesOfMesoIndicators
   |
-  |val psiPopulation = Statistics.psi(mesoTimeSeries,macroPopulationsTS)
-  |val deltaPopulation = Statistics.delta(mesoTimeSeries,macroPopulationsTS)
-  |val gammaPopulation = Statistics.gamma(mesoTimeSeries,macroPopulationsTS)
+  |//val psiPopulation = Statistics.psi(mesoTimeSeries,macroPopulationsTS)
+  |//val deltaPopulation = Statistics.delta(mesoTimeSeries,macroPopulationsTS)
+  |//val gammaPopulation = Statistics.gamma(mesoTimeSeries,macroPopulationsTS)
   |
-  |//val psiCloseness = Statistics.psi(mesoTimeSeries,macroClosenessesTS)
-  |//val deltaCloseness = Statistics.delta(mesoTimeSeries,macroClosenessesTS)
-  |//val gammaCloseness = Statistics.gamma(mesoTimeSeries,macroClosenessesTS)
+  |val psiCloseness = Statistics.psi(mesoTimeSeries,macroClosenessesTS)
+  |val deltaCloseness = Statistics.delta(mesoTimeSeries,macroClosenessesTS)
+  |val gammaCloseness = Statistics.gamma(mesoTimeSeries,macroClosenessesTS)
   |
   |//val psiAccessibility = Statistics.psi(mesoTimeSeries,macroAccessibilitiesTS)
   |//val deltaAccessibility = Statistics.delta(mesoTimeSeries,macroAccessibilitiesTS)
@@ -78,23 +78,24 @@ val model = ScalaTask(
     plugins += pluginsOf[urbanmodels.mesomacromultiscale.MultiscaleState],
   (inputs,outputs) += (macroGrowthRate,macroInteractionDecay,macroInteractionWeight,macroInteractionGamma,
     mesoAlpha,mesoBeta,mesoNdiff,mesoTimeSteps,macroMesoAlphaUpdateMax,macroMesoBetaUpdateMax,mesoMacroCongestionCost,mesoMacroDecayUpdateMax,replication),
-  outputs += (psiPopulation,deltaPopulation,gammaPopulation)//,psiCloseness,deltaCloseness,gammaCloseness,psiAccessibility,deltaAccessibility,gammaAccessibility)
+  outputs += (psiCloseness,deltaCloseness,gammaCloseness)//,psiPopulation,deltaPopulation,gammaPopulation,psiAccessibility,deltaAccessibility,gammaAccessibility)
 )
 
 
-val purpose = "PSE-MesoMacro-Populations"
+//val purpose = "PSE-MesoMacro-Populations"
+val purpose = "PSE-MesoMacro-Closeness"
 //val purpose = "TEST"
 
 val timestamp = ((new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")).format(new java.util.Date()))
 val resdir = (timestamp+"_"+purpose)
 
-val env = LocalEnvironment(10)
-//val env = MiniClustEnvironment("jraimbault","https://babar.openmole.org")
+//val env = LocalEnvironment(10)
+val env = MiniClustEnvironment("jraimbault","https://babar.openmole.org")
 
 
 PSEEvolution(
   evaluation = model,
-  parallelism = 10,
+  parallelism = 100,
   termination = 1000000,
   genome = Seq(
     macroGrowthRate in (0.0,0.05),
@@ -111,10 +112,13 @@ PSEEvolution(
     mesoMacroDecayUpdateMax in (-0.1,0.1)
   ),
   objective = Seq(
-    psiPopulation in (0.0 to 2.0 by 0.1),
-    deltaPopulation  in (0.0 to 2.0 by 0.1),
-    gammaPopulation in (0.0 to 0.5 by 0.05)
+    //psiPopulation in (0.0 to 2.0 by 0.1),
+    //deltaPopulation  in (0.0 to 2.0 by 0.1),
+    //gammaPopulation in (0.0 to 0.5 by 0.05)
+    psiCloseness in (0.0 to 2.0 by 0.1),
+    deltaCloseness in (0.0 to 2.0 by 0.1),
+    gammaCloseness in (0.0 to 0.5 by 0.05)
   ),
-  stochastic = Stochastic(seed = replication)//,
-  //distribution = Island(20 minutes)
+  stochastic = Stochastic(seed = replication),
+  distribution = Island(20 minutes)
 ) on env hook (workDirectory / "pse" / resdir,frequency = 1000)
